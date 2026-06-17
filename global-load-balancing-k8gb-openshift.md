@@ -219,7 +219,7 @@ sequenceDiagram
   participant CA as K8GB CoreDNS<br/>Site A
   participant CB as K8GB CoreDNS<br/>Site B
   participant RB as Router Site B
-  participant AI_B as AI Pods Site B ✗
+  participant AI_B as AI Pods Site B DOWN
 
   Note over AI_B: All pods fail readiness probe<br/>(model unavailable)
 
@@ -255,7 +255,7 @@ inference.ai.global.example.com.  30  IN  A  10.1.1.100   ← Site A only
 ```mermaid
 flowchart TB
   subgraph Before["Before — both healthy"]
-    BA[Site A ✓] 
+    BA[Site A HEALTHY] 
     BB[Site B ✓]
     DNS1["DNS: 10.1.1.100 + 10.2.2.100"]
     BA --> DNS1
@@ -263,8 +263,8 @@ flowchart TB
   end
 
   subgraph After["After — Site B app unhealthy"]
-    AA[Site A ✓]
-    AB[Site B ✗ pods not ready]
+    AA[Site A HEALTHY]
+    AB[Site B DOWN pods not ready]
     DNS2["DNS: 10.1.1.100 only"]
     AA --> DNS2
     AB -.->|VIP removed| DNS2
@@ -287,7 +287,7 @@ sequenceDiagram
   participant C as Client
   participant E as Edge DNS
   participant CA as K8GB CoreDNS<br/>Site A
-  participant CB as K8GB CoreDNS<br/>Site B ✗
+  participant CB as K8GB CoreDNS<br/>Site B DOWN
 
   Note over CB: Site B offline — CoreDNS unreachable
 
@@ -307,16 +307,14 @@ sequenceDiagram
 flowchart TB
   Client[Clients worldwide]
   Edge[Edge DNS]
-  SiteA["Site A ✓<br/>OpenShift + K8GB + AI"]
-  SiteB["Site B ✗<br/>datacenter / cluster down"]
+  SiteA["Site A HEALTHY<br/>OpenShift + K8GB + AI"]
+  SiteB["Site B DOWN<br/>datacenter / cluster down"]
 
   Client --> Edge
   Edge -->|only reachable NS| SiteA
-  Edge -.x|NS timeout| SiteB
+  Edge -.->|NS timeout| SiteB
   Client -->|all HTTPS traffic| SiteA
 
-  style SiteB fill:#fee,stroke:#c00
-  style SiteA fill:#efe,stroke:#090
 ```
 
 **Impact:** Full failover to Site A. Monitor Site A capacity (GPU, QPS) — it now handles 100% of load.
@@ -363,14 +361,10 @@ flowchart TB
       B1[k8gb B] --> B2[CoreDNS B]
       B2 --> B3["DNS answer: 10.2.2.100"]
     end
-
-    A1 -.x.-x B1
   end
 
   Edge[Edge DNS] --> A2
   Edge --> B2
-
-  style Partition fill:#fff8e1,stroke:#f9a825
 ```
 
 **Impact:** Not a full outage — both sites still serve clients. Load balancing strategy is degraded; traffic may skew based on which CoreDNS Edge DNS contacts. **Test and document this scenario before production.**
