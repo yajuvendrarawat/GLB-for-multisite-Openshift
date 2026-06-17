@@ -256,7 +256,7 @@ inference.ai.global.example.com.  30  IN  A  10.1.1.100   ← Site A only
 flowchart TB
   subgraph Before["Before — both healthy"]
     BA[Site A HEALTHY] 
-    BB[Site B ✓]
+    BB[Site B HEALTHY]
     DNS1["DNS: 10.1.1.100 + 10.2.2.100"]
     BA --> DNS1
     BB --> DNS1
